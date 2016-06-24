@@ -11,7 +11,7 @@ int encode(char *, char *,char *);
 
 int decode(char *, char *, char *);
 
-int startRecording(const char *pathStr);
+int startRecording(const char *pathStr, unsigned int);
 
 void stopRecording(void);
 

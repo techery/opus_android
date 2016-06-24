@@ -39,7 +39,7 @@ JNIEXPORT jint JNICALL Java_top_oply_opuslib_OpusTool_decode
  * Signature: (Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_top_oply_opuslib_OpusTool_startRecording
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jint);
 
 /*
  * Class:     top_oply_opuslib_OpusTool

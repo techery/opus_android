@@ -48,7 +48,7 @@ public class OpusTool {
      * @param opusFile path to save opus file
      * @return non zero if started player
      */
-    public native int startRecording(String opusFile);
+    public native int startRecording(String opusFile, int bitrate);
 
 
     /**

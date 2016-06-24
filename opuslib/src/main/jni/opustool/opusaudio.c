@@ -286,7 +286,8 @@ void cleanupRecorder() {
     LOGD("Recording ends!!!");
 }
 
-int initRecorder(const char *path) {
+int initRecorder(const char *path, unsigned int selectedBitrate) {
+    opus_int32 bitrateToUse = selectedBitrate == 0 ? bitrate : selectedBitrate;
     cleanupRecorder();
 
     LOGD("in Recorder, path: %s", path);
@@ -345,7 +346,7 @@ int initRecorder(const char *path) {
     min_bytes = max_frame_bytes = (1275 * 3 + 7) * header.nb_streams;
     _packet = malloc(max_frame_bytes);
 
-    result = opus_encoder_ctl(_encoder, OPUS_SET_BITRATE(bitrate));
+    result = opus_encoder_ctl(_encoder, OPUS_SET_BITRATE(bitrateToUse));
     if (result != OPUS_OK) {
         LOGE("Error OPUS_SET_BITRATE returned: %s", opus_strerror(result));
         return 0;
@@ -645,9 +646,8 @@ void fillBuffer(uint8_t *buffer, int capacity) {
  * below are some public interfaces for JavaJNI to call
  */
 
-int startRecording(const char *pathStr) {
-
-    int result = initRecorder(pathStr);
+int startRecording(const char *pathStr, unsigned int selectedBitrate) {
+    int result = initRecorder(pathStr, selectedBitrate);
     return result;
 }
 

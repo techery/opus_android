@@ -85,10 +85,10 @@ extern "C" {
      * Signature: (Ljava/lang/String;)I
      */
     JNIEXPORT jint JNICALL Java_top_oply_opuslib_OpusTool_startRecording
-      (JNIEnv *env, jobject obj, jstring fileIn){
+      (JNIEnv *env, jobject obj, jstring fileIn, jint bitrate){
       char bufFileIn[256] = {0};
       jstrToChar(env, fileIn, bufFileIn);
-      return startRecording(bufFileIn);
+      return startRecording(bufFileIn, bitrate);
       }
 
     /*

@@ -78,7 +78,7 @@ public class OpusRecorder {
             filePath = file;
         }
 //        filePath = file.isEmpty() ? initRecordFileName() : file;
-        int rst = opusTool.startRecording(filePath);
+        int rst = opusTool.startRecording(filePath, 64000);
         if (rst != 1) {
             if(mEventSender != null)
                 mEventSender.sendEvent(OpusEvent.RECORD_FAILED);
@@ -98,7 +98,6 @@ public class OpusRecorder {
         ByteBuffer finalBuffer = ByteBuffer.allocateDirect(size);
         finalBuffer.put(buffer);
         finalBuffer.rewind();
-        boolean flush = false;
 
         //write data to Opus file
         while (state == STATE_STARTED && finalBuffer.hasRemaining()) {
@@ -108,10 +107,8 @@ public class OpusRecorder {
                 finalBuffer.limit(fileBuffer.remaining() + finalBuffer.position());
             }
             fileBuffer.put(finalBuffer);
-            if (fileBuffer.position() == fileBuffer.limit() || flush) {
-                int length = !flush ? fileBuffer.limit() : finalBuffer.position();
-
-                int rst = opusTool.writeFrame(fileBuffer, length);
+            if (fileBuffer.position() == fileBuffer.limit()) {
+                int rst = opusTool.writeFrame(fileBuffer, finalBuffer.position());
                 if (rst != 0) {
                     fileBuffer.rewind();
                 }
