@@ -272,7 +272,7 @@ public class OpusService extends Service {
         mPlayer.seekOpusFile(scale);
     }
     private void handleActionRecord(String fileName) {
-        mRecorder.startRecording(fileName);
+        mRecorder.startRecording(fileName, 16000);
     }
     private void handleActionStopRecording() {
         mRecorder.stopRecording();

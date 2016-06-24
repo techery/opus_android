@@ -46,6 +46,7 @@ public class OpusTool {
      * Start opus recording
      *
      * @param opusFile path to save opus file
+     * @param bitrate bitrate with which opus encoder will be configured
      * @return non zero if started player
      */
     public native int startRecording(String opusFile, int bitrate);

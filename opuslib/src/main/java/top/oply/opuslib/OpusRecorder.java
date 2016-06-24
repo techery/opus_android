@@ -14,12 +14,15 @@ import java.util.TimerTask;
  * Created by young on 2015/7/2.
  */
 public class OpusRecorder {
-    private OpusRecorder(){}
-    private static volatile OpusRecorder oRecorder ;
-    public static OpusRecorder getInstance(){
-        if(oRecorder == null)
-            synchronized(OpusRecorder.class){
-                if(oRecorder == null)
+    private OpusRecorder() {
+    }
+
+    private static volatile OpusRecorder oRecorder;
+
+    public static OpusRecorder getInstance() {
+        if (oRecorder == null)
+            synchronized (OpusRecorder.class) {
+                if (oRecorder == null)
                     oRecorder = new OpusRecorder();
             }
         return oRecorder;
@@ -39,27 +42,35 @@ public class OpusRecorder {
     private OpusTool opusTool = new OpusTool();
     private int bufferSize = 0;
     private String filePath = null;
+    private OpusEvent opusEvent;
     private ByteBuffer fileBuffer = ByteBuffer.allocateDirect(1920);// Should be 1920, to accord with function writeFreme()
-    private OpusEvent mEventSender = null;
+
     private Timer mProgressTimer = null;
     private Utils.AudioTime mRecordTime = new Utils.AudioTime();
 
-    public void setEventSender(OpusEvent es) {
-        mEventSender = es;
+    private Listener listener = new SimpleListener();
+
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
+
+    @Deprecated
+    public void setEventSender(OpusEvent opusEvent) {
+        this.opusEvent = opusEvent;
     }
 
     class RecordThread implements Runnable {
         public void run() {
             mProgressTimer = new Timer();
             mRecordTime.setTimeInSecond(0);
-            mProgressTimer.schedule(new MyTimerTask(),1000,1000);
+            mProgressTimer.schedule(new MyTimerTask(), 1000, 1000);
 
             writeAudioDataToFile();
         }
     }
 
 
-    public void startRecording(final String file) {
+    public void startRecording(final String file, int bitrate) {
 
         if (state == STATE_STARTED)
             return;
@@ -72,22 +83,20 @@ public class OpusRecorder {
                 RECORDER_AUDIO_ENCODING, bufferSize);
         recorder.startRecording();
         state = STATE_STARTED;
-        if(file.isEmpty()) {
+        if (file.isEmpty()) {
             filePath = OpusTrackInfo.getInstance().getAValidFileName("OpusRecord");
         } else {
             filePath = file;
         }
-//        filePath = file.isEmpty() ? initRecordFileName() : file;
-        int rst = opusTool.startRecording(filePath, 64000);
+
+        int rst = opusTool.startRecording(filePath, bitrate);
         if (rst != 1) {
-            if(mEventSender != null)
-                mEventSender.sendEvent(OpusEvent.RECORD_FAILED);
-            Log.e(TAG,"recorder initially error");
+            listener.onFailed();
+            Log.e(TAG, "recorder initially error");
             return;
         }
 
-        if(mEventSender != null)
-            mEventSender.sendEvent(OpusEvent.RECORD_STARTED);
+        listener.onStarted();
 
         recordingThread = new Thread(new RecordThread(), "OpusRecord Thrd");
         recordingThread.start();
@@ -118,6 +127,7 @@ public class OpusRecorder {
             }
         }
     }
+
     private void writeAudioDataToFile() {
         if (state != STATE_STARTED)
             return;
@@ -131,11 +141,8 @@ public class OpusRecorder {
             if (len != AudioRecord.ERROR_INVALID_OPERATION) {
                 try {
                     writeAudioDataToOpus(buffer, len);
-                }
-                catch (Exception e)
-                {
-                    if(mEventSender != null)
-                        mEventSender.sendEvent(OpusEvent.RECORD_FAILED);
+                } catch (Exception e) {
+                    listener.onFailed();
                     Utils.printE(TAG, e);
                 }
             }
@@ -144,13 +151,12 @@ public class OpusRecorder {
     }
 
     private void updateTrackInfo() {
-        OpusTrackInfo info =  OpusTrackInfo.getInstance();
+        OpusTrackInfo info = OpusTrackInfo.getInstance();
         info.addOpusFile(filePath);
-        if(mEventSender != null) {
-            File f = new File(filePath);
-            mEventSender.sendEvent(OpusEvent.RECORD_FINISHED,f.getName());
-        }
+        File f = new File(filePath);
+        listener.onFinished(f.getName());
     }
+
     public void stopRecording() {
         if (state != STATE_STARTED)
             return;
@@ -159,9 +165,8 @@ public class OpusRecorder {
         mProgressTimer.cancel();
         try {
             Thread.sleep(200);
-        }
-        catch (Exception e) {
-            Utils.printE(TAG,e);
+        } catch (Exception e) {
+            Utils.printE(TAG, e);
         }
 
         if (null != recorder) {
@@ -174,25 +179,58 @@ public class OpusRecorder {
 
         updateTrackInfo();
     }
+
     public boolean isWorking() {
         return state != STATE_NONE;
     }
+
     public void release() {
-        if(state != STATE_NONE) {
+        if (state != STATE_NONE) {
             stopRecording();
         }
     }
 
     private class MyTimerTask extends TimerTask {
-        public void run () {
-            if(state != STATE_STARTED) {
+        public void run() {
+            if (state != STATE_STARTED) {
                 mProgressTimer.cancel();
             } else {
                 mRecordTime.add(1);
                 String progress = mRecordTime.getTime();
-                if(mEventSender != null)
-                    mEventSender.sendRecordProgressEvent(progress);
+                listener.onProgress(progress);
             }
+        }
+    }
+
+    public interface Listener {
+        void onStarted();
+
+        void onFailed();
+
+        void onProgress(String time);
+
+        void onFinished(String path);
+    }
+
+    public static class SimpleListener implements Listener {
+        @Override
+        public void onStarted() {
+
+        }
+
+        @Override
+        public void onFailed() {
+
+        }
+
+        @Override
+        public void onProgress(String time) {
+
+        }
+
+        @Override
+        public void onFinished(String path) {
+
         }
     }
 

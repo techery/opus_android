@@ -170,7 +170,7 @@ public class oplayer extends Activity {
                 break;
         }
         String fileName = path + name;
-        opusRecorder.startRecording(fileName);
+        opusRecorder.startRecording(fileName, 64000);
         print("Start Recording.. Save file to: " + fileName);
 
         updateList(name);
